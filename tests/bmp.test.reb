@@ -7,7 +7,7 @@
     bmp-img: decode 'bmp read %../fixtures/rebol-logo.bmp
     gif-img: decode 'gif read %../fixtures/rebol-logo.gif
     png-img: decode 'png read %../fixtures/rebol-logo.png
-    did all [
+    all [
         bmp-img == gif-img
         bmp-img == png-img
     ]
@@ -23,7 +23,7 @@
     png-bytes-png: encode 'png png-img
     png-bytes-bmp: encode 'png bmp-img
 
-    did all [
+    all [
         png-bytes-png = png-bytes-bmp
         (decode 'png png-bytes-png) = (decode 'png png-bytes-bmp)
     ]

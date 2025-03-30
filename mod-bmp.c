@@ -25,8 +25,6 @@
 // library function calls into an updated implementation.
 //
 
-#include "sys-core.h"
-
 #include "tmp-mod-bmp.h"
 
 //**********************************************************************
@@ -174,7 +172,7 @@ void Map_Bytes(void *dstp, const Byte* *srcp, const char *map) {
 
         case 'l':
             if (longaligned()) {
-                while ((cast(uintptr_t, dst) & 3) != 0)
+                while ((i_cast(uintptr_t, dst) & 3) != 0)
                     dst++;
             }
             *((uint32_t *)dst) = *((const uint32_t *)src);
@@ -231,7 +229,7 @@ void Unmap_Bytes(void *srcp, Byte* *dstp, const char *map) {
 
         case 'l':
             if (longaligned()) {
-                while((cast(uintptr_t, src) & 3) != 0)
+                while((i_cast(uintptr_t, src) & 3) != 0)
                     src++;
             }
             *((uint32_t *)dst) = *((uint32_t *)src);
@@ -287,20 +285,20 @@ static bool Has_Valid_BITMAPFILEHEADER(const Byte* data, uint32_t len) {
 //
 //  identify-bmp?: native [
 //
-//  {Codec for identifying BINARY! data for a BMP}
+//  "Codec for identifying BINARY! data for a BMP"
 //
-//      return: [logic!]
-//      data [binary!]
+//      return: [logic?]
+//      data [blob!]
 //  ]
 //
-DECLARE_NATIVE(identify_bmp_q)
+DECLARE_NATIVE(IDENTIFY_BMP_Q)
 {
-    BMP_INCLUDE_PARAMS_OF_IDENTIFY_BMP_Q;
+    INCLUDE_PARAMS_OF_IDENTIFY_BMP_Q;
 
     Size size;
-    const Byte* data = VAL_BINARY_SIZE_AT(&size, ARG(data));
+    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
 
-    // Assume signature matching is good enough (will get a fail() on
+    // Assume signature matching is good enough (will get a failure on
     // decode if it's a false positive).
     //
     return Init_Logic(OUT, Has_Valid_BITMAPFILEHEADER(data, size));
@@ -310,21 +308,21 @@ DECLARE_NATIVE(identify_bmp_q)
 //
 //  decode-bmp: native [
 //
-//  {Codec for decoding BINARY! data for a BMP}
+//  "Codec for decoding BINARY! data for a BMP"
 //
-//      return: [image!]
-//      data [binary!]
+//      return: [fundamental?]  ; IMAGE! not currently exposed
+//      data [blob!]
 //  ]
 //
-DECLARE_NATIVE(decode_bmp)
+DECLARE_NATIVE(DECODE_BMP)
 {
-    BMP_INCLUDE_PARAMS_OF_DECODE_BMP;
+    INCLUDE_PARAMS_OF_DECODE_BMP;
 
     Size size;
-    const Byte* data = VAL_BINARY_SIZE_AT(&size, ARG(data));
+    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
 
     if (not Has_Valid_BITMAPFILEHEADER(data, size))
-        fail (Error_Bad_Media_Raw());
+        return FAIL(Error_Bad_Media_Raw());
 
     int32_t              i, j, x, y, c;
     int32_t              colors, compression, bitcount;
@@ -359,7 +357,7 @@ DECLARE_NATIVE(decode_bmp)
             colors = 0;
 
         if (colors) {
-            ctab = TRY_ALLOC_N(RGBQUAD, colors);
+            ctab = Try_Alloc_Memory_N(RGBQUAD, colors);
             for (i = 0; i<colors; i++) {
                 ctab[i].rgbBlue = *cp++;
                 ctab[i].rgbGreen = *cp++;
@@ -380,7 +378,7 @@ DECLARE_NATIVE(decode_bmp)
             colors = bmih.biClrUsed;
 
         if (colors) {
-            ctab = TRY_ALLOC_N(RGBQUAD, colors);
+            ctab = Try_Alloc_Memory_N(RGBQUAD, colors);
             memcpy(ctab, cp, colors * sizeof(RGBQUAD));
             cp += colors * sizeof(RGBQUAD);
         }
@@ -563,12 +561,12 @@ DECLARE_NATIVE(decode_bmp)
     }
 
   blockscope {
-    REBVAL *binary = rebRepossess(image_bytes, (w * h) * 4);
+    RebolValue* blob = rebRepossess(image_bytes, (w * h) * 4);
 
     return rebValue(
-        "make image! compose [",
+        "make-image compose [",
             "(make pair! [", rebI(w), rebI(h), "])",
-            rebR(binary),
+            rebR(blob),
         "]"
     ); }
 
@@ -578,34 +576,35 @@ DECLARE_NATIVE(decode_bmp)
 
     if (ctab)
         free(ctab);
-    fail (Error_Bad_Media_Raw()); // better error?
+
+    return FAIL(Error_Bad_Media_Raw()); // better error?
 }
 
 
 //
 //  encode-bmp: native [
 //
-//  {Codec for encoding a BMP image}
+//  "Codec for encoding a BMP image"
 //
-//      return: [binary!]
-//      image [image!]
+//      return: [blob!]
+//      image [fundamental?]  ; IMAGE! not currently exposed
 //  ]
 //
-DECLARE_NATIVE(encode_bmp)
+DECLARE_NATIVE(ENCODE_BMP)
 {
-    BMP_INCLUDE_PARAMS_OF_ENCODE_BMP;
+    INCLUDE_PARAMS_OF_ENCODE_BMP;
 
     int32_t i, y;
     BITMAPFILEHEADER bmfh;
     BITMAPINFOHEADER bmih;
 
-    REBVAL *size = rebValue("pick", ARG(image), "'size");
+    RebolValue* size = rebValue("pick", ARG(IMAGE), "'size");
     int32_t w = rebUnboxInteger("pick", size, "'x");
     int32_t h = rebUnboxInteger("pick", size, "'y");
     rebRelease(size);
 
     size_t binsize;
-    Byte* image_bytes = rebBytes(&binsize, "bytes of", ARG(image));
+    Byte* image_bytes = rebBytes(&binsize, "bytes of", ARG(IMAGE));
     assert(cast(int32_t, binsize) == w * h * 4);
 
     memset(&bmfh, 0, sizeof(bmfh));
@@ -657,6 +656,6 @@ DECLARE_NATIVE(encode_bmp)
 
     rebFree(image_bytes);
 
-    REBVAL *binary = rebRepossess(bmp_bytes, bmfh.bfSize);
+    RebolValue* binary = rebRepossess(bmp_bytes, bmfh.bfSize);
     return binary;
 }
