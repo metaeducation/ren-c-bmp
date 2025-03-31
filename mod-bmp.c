@@ -27,6 +27,17 @@
 
 #include "tmp-mod-bmp.h"
 
+#include <setjmp.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <assert.h>
+#include <stdlib.h>  // memcpy, etc.
+
+#include "c-enhanced.h"
+
+typedef unsigned char Byte;
+typedef size_t Size;
+
 //**********************************************************************
 
 #define WADJUST(x) (((x * 3L + 3) / 4) * 4)
@@ -268,14 +279,14 @@ void Unmap_Bytes(void *srcp, Byte* *dstp, const char *map) {
 }
 
 
-static bool Has_Valid_BITMAPFILEHEADER(const Byte* data, uint32_t len) {
-    if (len < sizeof(BITMAPFILEHEADER))
+static bool Has_Valid_BITMAPFILEHEADER(const Byte* data, Size size) {
+    if (size < sizeof(BITMAPFILEHEADER))
         return false;
 
     BITMAPFILEHEADER bmfh;
     Map_Bytes(&bmfh, &data, mapBITMAPFILEHEADER);
 
-    if (bmfh.bfType[0] != 'B' || bmfh.bfType[1] != 'M')
+    if (bmfh.bfType[0] != 'B' or bmfh.bfType[1] != 'M')
         return false;
 
     return true;
@@ -292,16 +303,20 @@ static bool Has_Valid_BITMAPFILEHEADER(const Byte* data, uint32_t len) {
 //  ]
 //
 DECLARE_NATIVE(IDENTIFY_BMP_Q)
+//
+// Assume signature matching is good enough (will get a failure on decode if
+// it's a false positive).
 {
     INCLUDE_PARAMS_OF_IDENTIFY_BMP_Q;
 
     Size size;
-    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
+    const Byte* data = rebLockBytes(&size, "data");
 
-    // Assume signature matching is good enough (will get a failure on
-    // decode if it's a false positive).
-    //
-    return Init_Logic(OUT, Has_Valid_BITMAPFILEHEADER(data, size));
+    bool has_valid_header = Has_Valid_BITMAPFILEHEADER(data, size);
+
+    rebUnlockBytes(data);  // have to call before returning
+
+    return rebLogic(has_valid_header);
 }
 
 
@@ -318,11 +333,11 @@ DECLARE_NATIVE(DECODE_BMP)
 {
     INCLUDE_PARAMS_OF_DECODE_BMP;
 
-    Size size;
-    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
+    size_t size;
+    const Byte* data = rebLockBytes(&size, "data");
 
     if (not Has_Valid_BITMAPFILEHEADER(data, size))
-        return FAIL(Error_Bad_Media_Raw());
+        return "fail -{Invalid BMP file header}-";
 
     int32_t              i, j, x, y, c;
     int32_t              colors, compression, bitcount;
@@ -357,7 +372,7 @@ DECLARE_NATIVE(DECODE_BMP)
             colors = 0;
 
         if (colors) {
-            ctab = Try_Alloc_Memory_N(RGBQUAD, colors);
+            ctab = rebAllocN(RGBQUAD, colors);
             for (i = 0; i<colors; i++) {
                 ctab[i].rgbBlue = *cp++;
                 ctab[i].rgbGreen = *cp++;
@@ -378,7 +393,7 @@ DECLARE_NATIVE(DECODE_BMP)
             colors = bmih.biClrUsed;
 
         if (colors) {
-            ctab = Try_Alloc_Memory_N(RGBQUAD, colors);
+            ctab = rebAllocN(RGBQUAD, colors);
             memcpy(ctab, cp, colors * sizeof(RGBQUAD));
             cp += colors * sizeof(RGBQUAD);
         }
@@ -575,9 +590,9 @@ DECLARE_NATIVE(DECODE_BMP)
   bad_table_error:
 
     if (ctab)
-        free(ctab);
+        rebFree(ctab);
 
-    return FAIL(Error_Bad_Media_Raw()); // better error?
+    return "fail -{BMP decoding failed}-";  // better error?
 }
 
 
@@ -588,6 +603,7 @@ DECLARE_NATIVE(DECODE_BMP)
 //
 //      return: [blob!]
 //      image [fundamental?]  ; IMAGE! not currently exposed
+//      <local> dimensions
 //  ]
 //
 DECLARE_NATIVE(ENCODE_BMP)
@@ -598,13 +614,12 @@ DECLARE_NATIVE(ENCODE_BMP)
     BITMAPFILEHEADER bmfh;
     BITMAPINFOHEADER bmih;
 
-    RebolValue* size = rebValue("pick", ARG(IMAGE), "'size");
-    int32_t w = rebUnboxInteger("pick", size, "'x");
-    int32_t h = rebUnboxInteger("pick", size, "'y");
-    rebRelease(size);
+    rebElide("dimensions: pick image 'size");
+    int32_t w = rebUnboxInteger("dimensions.x");
+    int32_t h = rebUnboxInteger("dimensions.y");
 
     size_t binsize;
-    Byte* image_bytes = rebBytes(&binsize, "bytes of", ARG(IMAGE));
+    Byte* image_bytes = rebBytes(&binsize, "bytes of image");
     assert(cast(int32_t, binsize) == w * h * 4);
 
     memset(&bmfh, 0, sizeof(bmfh));
