@@ -25,8 +25,6 @@
 // library function calls into an updated implementation.
 //
 
-#include "tmp-mod-bmp.h"
-
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -35,8 +33,12 @@
 
 #include "c-enhanced.h"
 
+#include "rebol.h"
+#include "tmp-mod-bmp.h"
+
 typedef unsigned char Byte;
 typedef size_t Size;
+
 
 //**********************************************************************
 
@@ -579,7 +581,7 @@ DECLARE_NATIVE(DECODE_BMP)
     RebolValue* blob = rebRepossess(image_bytes, (w * h) * 4);
 
     return rebValue(
-        "make-image compose [",
+        "make image! compose [",
             "(make pair! [", rebI(w), rebI(h), "])",
             rebR(blob),
         "]"
