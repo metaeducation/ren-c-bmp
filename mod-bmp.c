@@ -591,8 +591,7 @@ DECLARE_NATIVE(DECODE_BMP)
   bad_encoding_error:
   bad_table_error:
 
-    if (ctab)
-        rebFree(ctab);
+    rebFreeOpt(ctab);
 
     return "fail -{BMP decoding failed}-";  // better error?
 }
