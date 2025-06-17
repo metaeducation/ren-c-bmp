@@ -339,7 +339,7 @@ DECLARE_NATIVE(DECODE_BMP)
     const Byte* data = rebLockBytes(&size, "data");
 
     if (not Has_Valid_BITMAPFILEHEADER(data, size))
-        return "fail -{Invalid BMP file header}-";
+        return "panic -[Invalid BMP file header]-";
 
     int32_t              i, j, x, y, c;
     int32_t              colors, compression, bitcount;
@@ -593,7 +593,7 @@ DECLARE_NATIVE(DECODE_BMP)
 
     rebFreeOpt(ctab);
 
-    return "fail -{BMP decoding failed}-";  // better error?
+    return "panic -[BMP decoding failed]-";  // better error?
 }
 
 
