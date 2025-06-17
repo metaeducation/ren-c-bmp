@@ -1,9 +1,9 @@
 //
-//  File: %mod-bmp.c
-//  Summary: "conversion to and from BMP graphics format"
-//  Section: Extension
-//  Project: "Rebol 3 Interpreter and Run-time (Ren-C branch)"
-//  Homepage: https://github.com/metaeducation/ren-c/
+//  file: %mod-bmp.c
+//  summary: "conversion to and from BMP graphics format"
+//  section: extension
+//  project: "Rebol 3 Interpreter and Run-time (Ren-C branch)"
+//  homepage: https://github.com/metaeducation/ren-c/
 //
 //=////////////////////////////////////////////////////////////////////////=//
 //
