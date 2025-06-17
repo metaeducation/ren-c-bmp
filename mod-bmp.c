@@ -31,7 +31,8 @@
 #include <assert.h>
 #include <stdlib.h>  // memcpy, etc.
 
-#include "c-enhanced.h"
+#include "needful/needful.h"
+#define cast  v_cast
 
 #include "rebol.h"
 #include "tmp-mod-bmp.h"
