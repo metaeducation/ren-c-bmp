@@ -5,4 +5,4 @@ Rebol [
 
 use-librebol: 'yes
 
-sources: %mod-bmp.c
+sources: [mod-bmp.c]
