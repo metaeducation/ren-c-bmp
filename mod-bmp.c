@@ -341,13 +341,16 @@ DECLARE_NATIVE(DECODE_BMP)
     if (not Has_Valid_BITMAPFILEHEADER(data, size))
         return "panic -[Invalid BMP file header]-";
 
-    int32_t              i, j, x, y, c;
-    int32_t              colors, compression, bitcount;
-    int32_t              w, h;
-    BITMAPINFOHEADER    bmih;
-    BITMAPCOREHEADER    bmch;
-    RGBQUADPTR          color;
-    RGBQUADPTR          ctab = 0;
+    RGBQUADPTR ctab = nullptr;
+
+  decode_bmp: { //////////////////////////////////////////////////////////////
+
+    int32_t i, j, x, y, c;
+    int32_t colors, compression, bitcount;
+    int32_t w, h;
+    BITMAPINFOHEADER bmih;
+    BITMAPCOREHEADER bmch;
+    RGBQUADPTR color;
 
     const Byte* cp = data;
 
@@ -577,7 +580,8 @@ DECLARE_NATIVE(DECODE_BMP)
         dp -= (2 * w) * 4;
     }
 
-  blockscope {
+  return_image: { ////////////////////////////////////////////////////////////
+
     RebolValue* blob = rebRepossess(image_bytes, (w * h) * 4);
 
     return rebValue(
@@ -585,16 +589,18 @@ DECLARE_NATIVE(DECODE_BMP)
             "(make pair! [", rebI(w), rebI(h), "])",
             rebR(blob),
         "]"
-    ); }
+    );
 
-  bit_len_error:
-  bad_encoding_error:
-  bad_table_error:
+}} bit_len_error: { //////////////////////////////////////////////////////////
+
+} bad_encoding_error: { //////////////////////////////////////////////////////
+
+} bad_table_error: { ////////////////////////////////////////////////////////
 
     rebFreeOpt(ctab);
 
     return "panic -[BMP decoding failed]-";  // better error?
-}
+}}
 
 
 //
