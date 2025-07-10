@@ -1,4 +1,4 @@
-; %bmp.test.reb
+; %bmp.test.r
 
 (image? decode 'bmp read %../fixtures/rebol-logo.bmp)
 
