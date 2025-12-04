@@ -611,7 +611,7 @@ DECLARE_NATIVE(DECODE_BMP)
 //
 //      return: [blob!]
 //      image [fundamental?]  ; IMAGE! not currently exposed
-//      <local> dimensions
+//      {dimensions}
 //  ]
 //
 DECLARE_NATIVE(ENCODE_BMP)
