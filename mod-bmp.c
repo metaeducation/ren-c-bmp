@@ -301,7 +301,7 @@ static bool Has_Valid_BITMAPFILEHEADER(const Byte* data, Size size) {
 //
 //  "Codec for identifying BINARY! data for a BMP"
 //
-//      return: [logic?]
+//      return: [logic!]
 //      data [blob!]
 //  ]
 //
