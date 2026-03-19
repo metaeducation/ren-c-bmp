@@ -297,7 +297,7 @@ static bool Has_Valid_BITMAPFILEHEADER(const Byte* data, Size size) {
 
 
 //
-//  identify-bmp?: native [
+//  /identify-bmp?: native [
 //
 //  "Codec for identifying BINARY! data for a BMP"
 //
@@ -324,7 +324,7 @@ DECLARE_NATIVE(IDENTIFY_BMP_Q)
 
 
 //
-//  decode-bmp: native [
+//  /decode-bmp: native [
 //
 //  "Codec for decoding BINARY! data for a BMP"
 //
@@ -605,7 +605,7 @@ DECLARE_NATIVE(DECODE_BMP)
 
 
 //
-//  encode-bmp: native [
+//  /encode-bmp: native [
 //
 //  "Codec for encoding a BMP image"
 //
