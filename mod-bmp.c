@@ -186,7 +186,7 @@ void Map_Bytes(void *dstp, const Byte* *srcp, const char *map) {
 
         case 'l':
             if (longaligned()) {
-                while ((i_cast(uintptr_t, dst) & 3) != 0)
+                while ((p_cast(uintptr_t, dst) & 3) != 0)
                     dst++;
             }
             *((uint32_t *)dst) = *((const uint32_t *)src);
@@ -243,7 +243,7 @@ void Unmap_Bytes(void *srcp, Byte* *dstp, const char *map) {
 
         case 'l':
             if (longaligned()) {
-                while((i_cast(uintptr_t, src) & 3) != 0)
+                while((p_cast(uintptr_t, src) & 3) != 0)
                     src++;
             }
             *((uint32_t *)dst) = *((uint32_t *)src);
@@ -405,7 +405,7 @@ DECLARE_NATIVE(DECODE_BMP)
         }
     }
 
-    if (bmfh.bfOffBits != cast(DWORD, cp - data))
+    if (bmfh.bfOffBits != i_cast(DWORD, cp - data))
         cp = data + bmfh.bfOffBits;
 
     Byte* image_bytes = rebAllocN(Byte, (w * h) * 4);  // RGBA is 4 bytes
@@ -628,7 +628,7 @@ DECLARE_NATIVE(ENCODE_BMP)
 
     size_t binsize;
     Byte* image_bytes = rebBytes(&binsize, "bytes of image");
-    assert(cast(int32_t, binsize) == w * h * 4);
+    assert(i_cast(int32_t, binsize) == w * h * 4);
 
     memset(&bmfh, 0, sizeof(bmfh));
     bmfh.bfType[0] = 'B';
